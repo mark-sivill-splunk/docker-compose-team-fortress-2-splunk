@@ -42,3 +42,10 @@ From same directory as the docker-compose.yml file ```docker-compose up```
 * Checks for Team Fortress 2 server updates on container start up and every 10 minutes
 * when configured to send data to Splunk in default mode (training) a constant stream of events will be sent to the Splunk Server due to Team Fortress 2 bots fighting
 
+# Other links
+
+- https://wiki.teamfortress.com/wiki/Servers - wiki for setting up Team Fortress 2
+- https://linuxgsm.com/ - ease Team Fortress 2 server set up
+- https://store.steampowered.com/app/440/Team_Fortress_2/ - setting up Team Fortress 2 client in Steam
+- https://docs.splunk.com/Documentation/Forwarder/latest/Forwarder/Abouttheuniversalforwarder - documentation on setting up Splunk Forwarder
+- https://splunkbase.splunk.com/app/1605/ - Splunk app (for Splunk Server) that works against data created by Team Fortress 2
