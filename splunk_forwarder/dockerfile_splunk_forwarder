@@ -1,0 +1,117 @@
+FROM ubuntu:18.04
+
+LABEL maintainer="Mark Sivill - Splunk"
+LABEL description="Splunk Forwarder listening to Team Fortress 2"
+
+#
+# Build Splunk Forwarder to listen to Team Fortress 2 server
+# 
+# Optionally override the contents of ./files/splunk/tf2_forwarder_app to bake in some of splunk forwarder configuration
+#
+
+# scripts starts with root user permissions
+
+# need use xterm for LinuxGSM
+ENV TERM=xterm
+
+
+#
+# Splunk forwarder variables
+#
+
+ENV SPLUNK_USER splunk_forwarder
+ENV SPLUNK_HOME /home/$SPLUNK_USER
+
+
+# v7.2.1
+ARG SPLUNK_VERSION=7.2.1
+ARG SPLUNK_BUILD=be11b2c46e23
+
+ARG SPLUNK_PRODUCT=universalforwarder
+ARG SPLUNK_FILENAME=splunkforwarder-${SPLUNK_VERSION}-${SPLUNK_BUILD}-Linux-x86_64.tgz
+
+#
+# ports to open in docker container
+#
+# splunk universal forwarder - 9997 TCP
+EXPOSE 9997
+
+#
+# 1) install packages
+# 2) set up team fortress 2 user
+#
+RUN apt-get -y update \
+  && apt-get --no-install-recommends -y install \
+    apt-utils \
+    curl \
+    wget \
+    ca-certificates \
+    file \
+    bzip2 \
+    gzip \
+    unzip \
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd $SPLUNK_USER \
+  && mkdir $SPLUNK_HOME \
+  && chown -R $SPLUNK_USER:$SPLUNK_USER $SPLUNK_HOME
+
+
+#
+# add splunk forwarder to TF2 sub directory
+#
+
+USER $SPLUNK_USER
+WORKDIR $SPLUNK_HOME
+
+#
+# 1) download official Splunk release, verify checksum and unzip in $SPLUNK_HOME
+# 2) do initial setup of forwarder ( no initial config yet )
+#
+
+RUN wget -qO /tmp/${SPLUNK_FILENAME} https://download.splunk.com/products/${SPLUNK_PRODUCT}/releases/${SPLUNK_VERSION}/linux/${SPLUNK_FILENAME} \
+    && wget -qO /tmp/${SPLUNK_FILENAME}.md5 https://download.splunk.com/products/${SPLUNK_PRODUCT}/releases/${SPLUNK_VERSION}/linux/${SPLUNK_FILENAME}.md5 \
+    && (cd /tmp && md5sum -c ${SPLUNK_FILENAME}.md5) \
+    && tar xzf /tmp/${SPLUNK_FILENAME} --strip 1 -C ${SPLUNK_HOME} \
+    && rm /tmp/${SPLUNK_FILENAME} \
+    && rm /tmp/${SPLUNK_FILENAME}.md5 \
+    && echo "[user_info]\nUSERNAME = `head /dev/urandom | tr -cd 'a-zA-Z' | head -c 32`\nPASSWORD = `head /dev/urandom | tr -cd 'a-zA-Z' | head -c 32`" > $SPLUNK_HOME/etc/system/local/user-seed.conf \
+    && $SPLUNK_HOME/bin/splunk start --answer-yes --no-prompt --accept-license \
+    && rm $SPLUNK_HOME/etc/system/local/user-seed.conf
+
+# putting stop in separate RUN seems to make build quicker
+RUN $SPLUNK_HOME/bin/splunk stop
+
+#
+# 1) create default configuration
+# 2) copy either and empty or complete splunk universal forwarder app (with configuration)
+#
+USER root
+COPY ./files/splunk/tf2_forwarder_app $SPLUNK_HOME/etc/apps/tf2_forwarder_app
+RUN chown -R $SPLUNK_USER:$SPLUNK_USER $SPLUNK_HOME/etc/apps/
+
+
+USER $SPLUNK_USER
+RUN mkdir $SPLUNK_HOME/etc/apps/tf2_forwarder_app/local
+
+
+# create team fortress 2, add mods
+
+WORKDIR $SPLUNK_HOME
+RUN wget -O linuxgsm.sh https://linuxgsm.sh && chmod +x linuxgsm.sh && bash linuxgsm.sh tf2server \
+  && ./tf2server auto-install
+
+# add mods (using bash so can do redirect <<<)
+RUN ["/bin/bash", "-c", "./tf2server mods-install <<< 'metamod'"]
+RUN ["/bin/bash", "-c", "./tf2server mods-install <<< 'sourcemod'"]
+
+# need to switch to root so can put correct permissions/owners on file
+USER root
+COPY ./files/start.sh $SPLUNK_HOME/start.sh
+RUN chown $SPLUNK_USER:$SPLUNK_USER $SPLUNK_HOME/start.sh
+
+USER $SPLUNK_USER
+
+# ensure start script can be executed
+RUN chmod +x $SPLUNK_HOME/start.sh
+
+ENTRYPOINT ["./start.sh"]

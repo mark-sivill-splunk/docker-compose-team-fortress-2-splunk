@@ -1,0 +1,48 @@
+version: "3.7"
+
+services:
+
+  team_fortress_2:
+    build:
+      context: ./team_fortress_2
+      dockerfile: dockerfile_team_fortress_2
+    ports:
+      - "27015:27015/udp"
+      - "27015:27015"
+    volumes:
+      - type: volume
+        source: team_fortress_2_logs
+        target: /home/tf2/serverfiles/tf/logs/
+        volume:
+          no copy: true
+    environment:
+      - TEAM_FORTRESS_2_CONFIG=${TEAM_FORTRESS_2_CONFIG}
+      - TEAM_FORTRESS_2_SV_PASSWORD=${TEAM_FORTRESS_2_SV_PASSWORD}
+      - TEAM_FORTRESS_2_RCON_PASSWORD=${TEAM_FORTRESS_2_RCON_PASSWORD}
+
+  splunk_forwarder:
+    build:
+      context: ./splunk_forwarder
+      dockerfile: dockerfile_splunk_forwarder
+    ports:
+      - "9997:9997"
+    volumes:
+      - type: volume
+        source: team_fortress_2_logs
+        target: /var/log/team_fortress_2/
+        read_only: true
+        volume:
+          no copy: true
+    environment:
+      - SPLUNK_FORWARDER_INDEX=${SPLUNK_FORWARDER_INDEX}
+      - SPLUNK_FORWARDER_SOURCETYPE=${SPLUNK_FORWARDER_SOURCETYPE}
+      - SPLUNK_FORWARDER_HOST=${SPLUNK_FORWARDER_HOST}
+      - SPLUNK_FORWARDER_SERVER_PORT=${SPLUNK_FORWARDER_SERVER_PORT}
+
+volumes:
+  team_fortress_2_logs:
+
+
+
+
+

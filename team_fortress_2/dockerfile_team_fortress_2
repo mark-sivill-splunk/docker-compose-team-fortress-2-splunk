@@ -1,0 +1,149 @@
+FROM ubuntu:18.04
+
+LABEL maintainer="Mark Sivill - Splunk"
+LABEL description="Team Fortress 2 server"
+
+#
+# Build Team Fortress 2 server sends logs to Docker Volume
+# 
+
+# scripts starts with root user permissions
+
+# need use xterm for LinuxGSM
+ENV TERM=xterm
+
+#
+# Team Fortress 2 variables
+#
+
+ENV TF2_USER tf2
+ENV TF2_HOME /home/$TF2_USER
+
+
+#
+# ports to open in docker container
+#
+# team fortress 2 - 27015 UDP - client
+# team fortress 2 - 27015 TCP - RCON (remote console access)
+EXPOSE 27015/udp 27015
+
+#
+# 1) install packages
+# 2) set up team fortress 2 user
+#
+RUN dpkg --add-architecture i386 \
+  && apt-get -y update \
+  && apt-get --no-install-recommends -y install \
+    iproute2 \
+    apt-utils \
+    curl \
+    tmux \
+    wget \
+    ca-certificates \
+    file \
+    bsdmainutils \
+    util-linux \
+    python \
+    bzip2 \
+    gzip \
+    unzip \
+    binutils \
+    bc \
+    jq \
+    lib32gcc1 \
+    libstdc++6:i386 \
+    libcurl4-gnutls-dev:i386 \
+    libtcmalloc-minimal4:i386 \
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd $TF2_USER \
+  && mkdir $TF2_HOME \
+  && chown -R $TF2_USER:$TF2_USER $TF2_HOME
+
+
+# create team fortress 2, add mods
+
+USER $TF2_USER
+WORKDIR $TF2_HOME
+RUN wget -O linuxgsm.sh https://linuxgsm.sh && chmod +x linuxgsm.sh && bash linuxgsm.sh tf2server \
+  && ./tf2server auto-install
+
+
+# add mods (using bash so can do redirect <<<)
+RUN ["/bin/bash", "-c", "./tf2server mods-install <<< 'metamod'"]
+RUN ["/bin/bash", "-c", "./tf2server mods-install <<< 'sourcemod'"]
+
+# need to switch to root so can put correct permissions/owners on file
+USER root
+COPY ./files/start.sh $TF2_HOME/start.sh
+COPY ./files/linuxgsm/common.cfg $TF2_HOME/lgsm/config-lgsm/tf2server/common.cfg
+COPY ./files/team_fortress_2/config/*.cfg $TF2_HOME/serverfiles/tf/cfg/
+COPY ./files/team_fortress_2/config/*.txt $TF2_HOME/serverfiles/tf/cfg/
+COPY ./files/team_fortress_2/mods/superlogs/loghelper.inc $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/include/loghelper.inc
+COPY ./files/team_fortress_2/mods/superlogs/superlogs-tf2.sp $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/superlogs-tf2.sp
+RUN chown $TF2_USER:$TF2_USER $TF2_HOME/start.sh \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/lgsm/config-lgsm/tf2server/common.cfg \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/cfg/*.cfg \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/cfg/*.txt \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/include/loghelper.inc \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/superlogs-tf2.sp \
+  && echo "rcon_password \"`head /dev/urandom | tr -cd 'a-zA-Z' | head -c 32`\"\nsv_password \"`head /dev/urandom | tr -cd 'a-zA-Z' | head -c 32`\"\n" > $TF2_HOME/serverfiles/tf/cfg/passwords.cfg
+
+# in order to mount via volume directory must be created as root
+RUN echo "List logs directory" \
+  && ls -al $TF2_HOME/serverfiles/tf/logs \
+#  && ls -al /var/ \
+#  && ls -al /var/log \
+  && rmdir $TF2_HOME/serverfiles/tf/logs \
+  && mkdir $TF2_HOME/serverfiles/tf/logs \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/logs
+# VOLUME $TF2_HOME/serverfiles/tf/logs
+
+# create
+#RUN mkdir /var/log/team_fortress_2 \
+#&& chmod 777 /var/log/team_fortress_2 \
+#RUN echo "List logs directory" \
+#  && ls -al $TF2_HOME/serverfiles/tf/logs \  
+#  && rmdir $TF2_HOME/serverfiles/tf/logs \
+#  && cd $TF2_HOME/serverfiles/tf/ \
+#  && ln -s /var/log/team_fortress_2 logs \
+#  && echo "List logs directory 2" \
+#  && ls -al $TF2_HOME/serverfiles/tf/logs \
+#  && chown $TF2_USER:$TF2_USER /var/log/team_fortress_2 \
+#  && echo "List logs directory 3" \
+#  && ls -al $TF2_HOME/serverfiles/tf/logs
+
+
+# cd $TF2_HOME/serverfiles/tf/ \
+#  && ln -s /var/log/team_fortress_2 logs
+
+
+
+USER $TF2_USER
+# ensure start script can be executed
+# create default tf2 config
+# compile superlogs mod
+RUN chmod +x $TF2_HOME/start.sh \
+  && cp $TF2_HOME/serverfiles/tf/cfg/tf2server_training.cfg $TF2_HOME/serverfiles/tf/cfg/tf2server.cfg \
+  && $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/compile.sh \
+  && mv $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/compiled/superlogs-tf2.smx $TF2_HOME/serverfiles/tf/addons/sourcemod/plugins \
+  && rm -r $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/compiled
+
+USER root
+
+# in order to mount via volume directory must be created as root
+RUN echo "List logs directory" \
+  && ls -al $TF2_HOME/serverfiles/tf/logs \
+#  && ls -al /var/ \
+#  && ls -al /var/log \
+  && rmdir $TF2_HOME/serverfiles/tf/logs \
+  && mkdir $TF2_HOME/serverfiles/tf/logs \
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/logs \
+  && echo "List logs directory 2" \
+  && ls -al $TF2_HOME/serverfiles/tf/logs
+
+USER $TF2_USER
+
+# set starting directory location
+WORKDIR $TF2_HOME
+
+ENTRYPOINT ["./start.sh"]
