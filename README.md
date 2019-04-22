@@ -4,7 +4,7 @@ Use docker-compose to create a Team Fortress 2 server that can optionally send d
 
 # Overview
 
-Use docker-compose to build docker instances for Team Fortress 2 server and Splunk Frowarder. This work decomposes the docker-team-fortress-2-splunk github repository (https://github.com/mark-sivill-splunk/docker-team-fortress-2-splunk) by seperating Team Fortress 2 server and Splunk Forwarder into their own repsective docker containers and then coordinates the interaction between the containers by using a volume mapping. 
+Use docker-compose to build docker instances for Team Fortress 2 server and Splunk Forwarder. This work decomposes the docker-team-fortress-2-splunk Github repository (https://github.com/mark-sivill-splunk/docker-team-fortress-2-splunk) by separating Team Fortress 2 server and Splunk Forwarder into their own respective docker containers and then coordinates the interaction between the containers by using a volume mapping. 
 
 Configuring the location of the Splunk Server can be determined at runtime for simple examples, for more complex examples some of the forwarder configuration can be baked into the Splunk Forwarder docker image itself. Useful for when dealing with certificates in the forwarder.
 
@@ -17,17 +17,17 @@ This is useful when more complex forwarder configurations are required for examp
 
 # To Run
 
-First set the required enviroment variables
+First set the required environment variables
 
 - ```SPLUNK_FORWARDER_INDEX``` => required to send data to Splunk, the index that data is written to in Splunk
 - ```SPLUNK_FORWARDER_SOURCETYPE``` => required to send data to Splunk, the sourcetype that data is written to in Splunk 
 - ```SPLUNK_FORWARDER_HOST``` => required to send data to Splunk, the forwarder that data is written to in Splunk
 - ```SPLUNK_FORWARDER_SERVER_PORT``` => required to send data to Splunk if not baked into Splunk Forwarder app. It will be in the format of splunk.example.com:9997
 - ```TEAM_FORTRESS_2_CONFIG``` => setting the default game mode. Current modes are casual, tournament, training, custom1_koth_tournament, and custom1_koth_training (training is default)
-- ```TEAM_FORTRESS_2_SV_PASSWORD``` => Team Fortress 2 game password for games clients to connect to Team Fortress 2 server. By default no password is required
+- ```TEAM_FORTRESS_2_SV_PASSWORD``` => Team Fortress 2 game password for games clients to connect to Team Fortress 2 server. By default, no password is required
 - ```TEAM_FORTRESS_2_RCON_PASSWORD```  => Team Fortress 2 admin password for RCON console
 
-For example to set source type on Linux
+For example, to set source type on Linux
 ```SPLUNK_FORWARDER_SOURCETYPE=tf2server; export SPLUNK_FORWARDER_INDEX```
 
 Then to run Team Fortress 2 server and Splunk Forwarder, from same directory as the docker-compose.yml file run ```docker-compose up```
