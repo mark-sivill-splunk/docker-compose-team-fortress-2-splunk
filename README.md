@@ -32,13 +32,19 @@ For example to set source type on Linux
 
 Then to run Team Fortress 2 server and Splunk Forwarder
 
-From same directory as the docker-compose.yml file ```docker-compose up```
+From same directory as the docker-compose.yml file run ```docker-compose up```
 
+# Housekeeping
 
+The Team Fortress 2 logs are sent to the Splunk Forwarder container using a mapped volume. This volume may need to periodically removed between restarts of the containers. Useful volume commands -
+
+- List of volumes ```docker volume ls```
+- Remove all volumes ```docker volume prune```
+- Remove specific volume ```docker volume rm <volume>```
 
 # Notes
 
-* Tested on Linux
+* Tested on Linux host
 * Checks for Team Fortress 2 server updates on container start up and every 10 minutes
 * when configured to send data to Splunk in default mode (training) a constant stream of events will be sent to the Splunk Server due to Team Fortress 2 bots fighting
 
