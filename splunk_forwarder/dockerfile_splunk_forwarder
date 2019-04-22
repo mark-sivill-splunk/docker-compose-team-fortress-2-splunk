@@ -94,16 +94,6 @@ USER $SPLUNK_USER
 RUN mkdir $SPLUNK_HOME/etc/apps/tf2_forwarder_app/local
 
 
-# create team fortress 2, add mods
-
-WORKDIR $SPLUNK_HOME
-RUN wget -O linuxgsm.sh https://linuxgsm.sh && chmod +x linuxgsm.sh && bash linuxgsm.sh tf2server \
-  && ./tf2server auto-install
-
-# add mods (using bash so can do redirect <<<)
-RUN ["/bin/bash", "-c", "./tf2server mods-install <<< 'metamod'"]
-RUN ["/bin/bash", "-c", "./tf2server mods-install <<< 'sourcemod'"]
-
 # need to switch to root so can put correct permissions/owners on file
 USER root
 COPY ./files/start.sh $SPLUNK_HOME/start.sh
@@ -113,5 +103,7 @@ USER $SPLUNK_USER
 
 # ensure start script can be executed
 RUN chmod +x $SPLUNK_HOME/start.sh
+
+WORKDIR $SPLUNK_HOME
 
 ENTRYPOINT ["./start.sh"]
