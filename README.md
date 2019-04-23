@@ -1,6 +1,6 @@
 # docker-compose-team-fortress-2-splunk
 
-Use docker-compose to create a Team Fortress 2 server that can optionally send data to an external Splunk Server using a Splunk Forwarder. One docker instance runs Team Fortress 2 server and the other instance runs a Splunk Forwarder.
+Use docker-compose to create a Team Fortress 2 server that can optionally send data to an external Splunk Server using a Splunk Forwarder. One docker instance runs Team Fortress 2 server and the other instance runs a Splunk Forwarder. The forwarder uses a mapped volume to collect logs.
 
 # Overview
 
