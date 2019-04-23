@@ -88,35 +88,6 @@ RUN chown $TF2_USER:$TF2_USER $TF2_HOME/start.sh \
   && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/addons/sourcemod/scripting/superlogs-tf2.sp \
   && echo "rcon_password \"`head /dev/urandom | tr -cd 'a-zA-Z' | head -c 32`\"\nsv_password \"`head /dev/urandom | tr -cd 'a-zA-Z' | head -c 32`\"\n" > $TF2_HOME/serverfiles/tf/cfg/passwords.cfg
 
-# in order to mount via volume directory must be created as root
-RUN echo "List logs directory" \
-  && ls -al $TF2_HOME/serverfiles/tf/logs \
-#  && ls -al /var/ \
-#  && ls -al /var/log \
-  && rmdir $TF2_HOME/serverfiles/tf/logs \
-  && mkdir $TF2_HOME/serverfiles/tf/logs \
-  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/logs
-# VOLUME $TF2_HOME/serverfiles/tf/logs
-
-# create
-#RUN mkdir /var/log/team_fortress_2 \
-#&& chmod 777 /var/log/team_fortress_2 \
-#RUN echo "List logs directory" \
-#  && ls -al $TF2_HOME/serverfiles/tf/logs \  
-#  && rmdir $TF2_HOME/serverfiles/tf/logs \
-#  && cd $TF2_HOME/serverfiles/tf/ \
-#  && ln -s /var/log/team_fortress_2 logs \
-#  && echo "List logs directory 2" \
-#  && ls -al $TF2_HOME/serverfiles/tf/logs \
-#  && chown $TF2_USER:$TF2_USER /var/log/team_fortress_2 \
-#  && echo "List logs directory 3" \
-#  && ls -al $TF2_HOME/serverfiles/tf/logs
-
-
-# cd $TF2_HOME/serverfiles/tf/ \
-#  && ln -s /var/log/team_fortress_2 logs
-
-
 
 USER $TF2_USER
 # ensure start script can be executed
@@ -131,15 +102,9 @@ RUN chmod +x $TF2_HOME/start.sh \
 USER root
 
 # in order to mount via volume directory must be created as root
-RUN echo "List logs directory" \
-  && ls -al $TF2_HOME/serverfiles/tf/logs \
-#  && ls -al /var/ \
-#  && ls -al /var/log \
-  && rmdir $TF2_HOME/serverfiles/tf/logs \
+RUN rmdir $TF2_HOME/serverfiles/tf/logs \
   && mkdir $TF2_HOME/serverfiles/tf/logs \
-  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/logs \
-  && echo "List logs directory 2" \
-  && ls -al $TF2_HOME/serverfiles/tf/logs
+  && chown $TF2_USER:$TF2_USER $TF2_HOME/serverfiles/tf/logs
 
 USER $TF2_USER
 
