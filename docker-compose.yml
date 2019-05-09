@@ -24,8 +24,6 @@ services:
     build:
       context: ./splunk_forwarder
       dockerfile: dockerfile_splunk_forwarder
-    ports:
-      - "9997:9997"
     volumes:
       - type: volume
         source: team_fortress_2_logs
